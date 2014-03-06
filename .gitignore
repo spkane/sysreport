@@ -1,2 +1,4 @@
 sysreport
 *.pem
+.vagrant
+

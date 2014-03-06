@@ -4,14 +4,12 @@ import (
   "fmt"
   "strconv"
   "net/http"
-  "encoding/json"
-  "os/exec"
   "flag"
-  "github.com/spkane/go-utils/jsonutils"
-  "github.com/spkane/go-utils/debugtools"
+  "./plugins"
 )
 
-var msg string
+var facterMsg string
+var ohaiMsg string
 var debugPtr = flag.Bool("debug", false, "Enable debug output on console")
 var portPtr  = flag.Int("port", 8080, "Port to listen on")
 var sslPtr   = flag.Bool("ssl", false, "Enable HTTPS")
@@ -25,7 +23,8 @@ func main() {
 
   urlport := ":" + strconv.Itoa(*portPtr)
 
-  http.HandleFunc("/facter", viewHandler)
+  http.HandleFunc("/ohai", ohaiViewHandler)
+  http.HandleFunc("/facter", facterViewHandler)
   if *sslPtr == true {
     http.ListenAndServeTLS(urlport, *cpemPtr, *kpemPtr, nil)
   } else {
@@ -33,41 +32,60 @@ func main() {
   }
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
+func ohaiViewHandler(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("Access-Control-Allow-Origin", "*")
   w.Header().Set("Content-type", "application/json")
 
-  jsonMsg, err := getResponse()
+  jsonMsg, err := getOhaiResponse()
   if err != nil {
     http.Error(w, "Oops", http.StatusInternalServerError)
   }
   fmt.Fprintf(w, jsonMsg)
 }
 
-func getResponse() (string, error){
+func facterViewHandler(w http.ResponseWriter, r *http.Request) {
+  w.Header().Set("Access-Control-Allow-Origin", "*")
+  w.Header().Set("Content-type", "application/json")
+
+  jsonMsg, err := getFacterResponse()
+  if err != nil {
+    http.Error(w, "Oops", http.StatusInternalServerError)
+  }
+  fmt.Fprintf(w, jsonMsg)
+}
+
+func getOhaiResponse() (string, error){
 
   // Note: We pull this once and only once.
   // Should have a timer of some sort.
-  if msg != "" {
-    return msg, nil
+  if ohaiMsg != "" {
+    return ohaiMsg, nil
   }
 
-  out, err := exec.Command("facter","-j","-p").Output()
+  jsonMsg, err := plugins.Ohai(*debugPtr)
+
   if err != nil {
-    out2, err2 := exec.Command("facter","-j").Output()
-    debugtools.CheckError(err2)
-    out = out2
-  }
-
-  var input interface{}
-  err3 := json.Unmarshal(out, &input)
-  debugtools.CheckError(err3)
-
-  msg = jsonutils.JsonBuild(input, *debugPtr)
-
-  if err3 != nil {
     return "", err
+  } else {
+    return jsonMsg, nil
   }
 
-  return msg, nil
+}
+
+func getFacterResponse() (string, error){
+
+  // Note: We pull this once and only once.
+  // Should have a timer of some sort.
+  if facterMsg != "" {
+    return facterMsg, nil
+  }
+
+  jsonMsg, err := plugins.Facter(*debugPtr)
+
+  if err != nil {
+    return "", err
+  } else {
+    return jsonMsg, nil
+  }
+
 }

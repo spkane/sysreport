@@ -6,4 +6,8 @@ from tools like facter, rpm, etc.
 
 Written in Go
 
-RUN: sysreport --help
+```
+sysreport --help
+```
+
+**Inspired by**: https://github.com/RHInception/jsonstats/
