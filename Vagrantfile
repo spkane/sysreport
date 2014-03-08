@@ -7,9 +7,12 @@ FileUtils.chdir(File.dirname(__FILE__))
 VAGRANTFILE_API_VERSION = "2"
 
 $script = <<SCRIPT
+sudo apt-get -y update
 sudo apt-get -y install git curl
-sudo cp -f /home/vagrant/go/init.ubuntu /etc/init.d/sysreport
+sudo cp -f /home/vagrant/go/tools/init.ubuntu /etc/init.d/sysreport
 sudo chmod +x /etc/init.d/sysreport
+sudo cp -f /home/vagrant/go/tools/fake-rpm.sh /usr/bin/rpm
+sudo chmod +x /usr/bin/rpm
 sudo update-rc.d sysreport defaults
 if [ ! -f /home/vagrant/.goenv ]; then
   git clone https://github.com/wfarr/goenv.git ~/.goenv
