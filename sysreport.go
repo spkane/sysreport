@@ -21,7 +21,7 @@ func main() {
 
   urlport := ":" + strconv.Itoa(*portPtr)
 
-  http.HandleFunc("/dpkg", dpkgViewHandler)
+  http.HandleFunc("/packages", packagesViewHandler)
   http.HandleFunc("/facter", facterViewHandler)
   http.HandleFunc("/ohai", ohaiViewHandler)
   if *sslPtr == true {
@@ -31,11 +31,11 @@ func main() {
   }
 }
 
-func dpkgViewHandler(w http.ResponseWriter, r *http.Request) {
+func packagesViewHandler(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("Access-Control-Allow-Origin", "*")
   w.Header().Set("Content-type", "application/json")
 
-  jsonMsg, err := getResponse("dpkg")
+  jsonMsg, err := getResponse("packages")
   if err != nil {
     http.Error(w, "Oops", http.StatusInternalServerError)
   }

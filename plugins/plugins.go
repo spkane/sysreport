@@ -3,6 +3,8 @@ package plugins
 import (
   "encoding/json"
   "os/exec"
+  "os"
+  "errors"
   "strings"
   "bufio"
   "bytes"
@@ -15,18 +17,53 @@ func Call(plugin string, debug bool) (string, error) {
 
   ltype := strings.ToLower(plugin)
 
+  out, err := "", error(nil)
+
   switch ltype {
-    default: return Facter(debug)
-    case "dpkg": return Dpkg(debug)
-    case "facter": return Facter(debug)
-    case "ohai": return Ohai(debug)
+    default: out, err = Facter(debug)
+    case "packages": out, err = Packages(debug)
+    case "facter": out, err = Facter(debug)
+    case "ohai": out, err = Ohai(debug)
   }
+
+  return out, err
 
 }
 
-func Dpkg(debug bool) (string, error) {
+func DetermineDistro() (string) {
 
-  out, err := exec.Command("dpkg-query", "-W").Output()
+  file, err := os.Open("/etc/debian_version") // For read access.
+  if err == nil {
+    return "debian"
+  } else {
+    file.Close()
+  }
+
+  file2, err2 := os.Open("/etc/redhat-release") // For read access.
+  if err2 == nil {
+    return "redhat"
+  } else {
+    file2.Close()
+  }
+
+  return "unknown"
+
+}
+
+func Packages(debug bool) (string, error) {
+
+  distro := DetermineDistro()
+
+  out, err := []byte{}, error(nil)
+
+  switch distro {
+    default: out, err = []byte{0}, errors.New("unknown")
+    case "debian":
+      out, err = exec.Command("dpkg-query", "-W").Output()
+    case "redhat":
+      out, err = exec.Command("rpm", "-qa", "--queryformat", "\"%{NAME}\t%{VERSION}\n\"").Output()
+  }
+
   if err != nil {
     return "", err
   }
@@ -39,11 +76,12 @@ func Dpkg(debug bool) (string, error) {
     s := strings.Split(scanner.Text(), "\t")
     strutils.QuoteString(s[0])
     strutils.QuoteString(s[1])
-    jsonMsg += "  " + strutils.QuoteString(s[0]) + " : " + strutils.QuoteString(s[1]) + "\n"
+    jsonMsg += "  " + strutils.QuoteString(s[0]) + " : " + strutils.QuoteString(s[1]) + ",\n"
 
 	}
 
-  jsonMsg += "}"
+  jsonMsg = strutils.TrimSuffix(jsonMsg, ",\n")
+  jsonMsg += "\n}"
   return jsonMsg, nil
 
 }
