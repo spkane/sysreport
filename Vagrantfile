@@ -31,6 +31,7 @@ if [ ! -f /home/vagrant/.goenv ]; then
   go get github.com/spkane/go-utils/debugtools
   go get github.com/spkane/go-utils/jsonutils
   go get github.com/spkane/go-utils/strutils
+  go get github.com/abbot/go-http-auth
   echo 'export GOPATH="/home/vagrant/gopath"' >> ~/.bashrc
   echo 'export GOROOT=`go env GOROOT`' >> ~/.bashrc
   echo 'export GOBIN="$GOPATH/bin"' >> ~/.bashrc
